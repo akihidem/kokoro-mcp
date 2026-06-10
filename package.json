@@ -1,0 +1,35 @@
+{
+  "name": "kokoro-mcp",
+  "version": "0.1.0",
+  "description": "kokoro.md の署名・検証・配信を行う zero-dependency ローダー / MCP サーバ（KOKORO SPEC §13.4 提案実装 + akashi 信頼層）",
+  "type": "module",
+  "bin": {
+    "kokoro-mcp": "bin/kokoro-mcp.js"
+  },
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "docs",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "license": "MIT",
+  "author": "akihidem",
+  "keywords": [
+    "kokoro",
+    "mcp",
+    "personalization",
+    "accessibility",
+    "ed25519",
+    "model-context-protocol"
+  ]
+}
