@@ -56,7 +56,8 @@ function checkSummary(doc, summaryText, errors) {
   }
   const boundary = doc.sections.find((s) => /境界線/.test(s.title));
   if (boundary) {
-    const norm = (t) => t.replace(/\s+/g, ' ').trim();
+    // 逐語比較はテキスト内容に対して行う（強調記号・空白の差は許容）
+    const norm = (t) => t.replace(/\*+/g, '').replace(/\s+/g, ' ').trim();
     if (!norm(summaryText).includes(norm(boundary.body))) {
       errors.push('要約版: 「AI に伝える境界線」が逐語コピーされていません（§5 HARD / §9）');
     }

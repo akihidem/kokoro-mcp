@@ -227,6 +227,7 @@ async function cmdStatus(argv) {
 async function cmdRender(argv) {
   const { values, positionals } = parse(argv, {
     'no-banner': { type: 'boolean', default: false },
+    'body-only': { type: 'boolean', default: false },
     'quiet-missing': { type: 'boolean', default: false },
   });
   const a = await assess(assessOpts(values, positionals));
@@ -240,8 +241,8 @@ async function cmdRender(argv) {
     for (const r of a.refusals) console.error(`  ✗ ${r}`);
     return 2;
   }
-  const text = values['no-banner'] ? a.doc.text : `${banner(a, VERSION)}\n${a.doc.text}`;
-  process.stdout.write(text);
+  const content = values['body-only'] ? a.doc.body.replace(/^\n+/, '') : a.doc.text;
+  process.stdout.write(values['no-banner'] ? content : `${banner(a, VERSION)}\n${content}`);
   return 0;
 }
 

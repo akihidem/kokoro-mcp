@@ -20,7 +20,12 @@
     "node": ">=20"
   },
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "prepublishOnly": "node --test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/akihidem/kokoro-mcp.git"
   },
   "license": "MIT",
   "author": "akihidem",
