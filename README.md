@@ -1,5 +1,7 @@
 # kokoro-mcp
 
+[English README](./README.en.md)
+
 > `kokoro.md` の署名・検証・配信を行う zero-dependency ローダー / MCP サーバ。
 > [KOKORO SPEC](https://github.com/akihidem/KOKORO) §13.4（reference CLI）への提案実装 + **akashi 信頼層**（§3.1 `signature_hash` v0.2 必須化への具体案）。
 
