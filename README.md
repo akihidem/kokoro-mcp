@@ -137,10 +137,10 @@ npm test   # node --test（47 件: 正規化 / 署名 / 失効 / §10.3 / lint /
 
 ## ロードマップ
 
+- [x] KOKORO SPEC への upstream 提案 → [KOKORO#94](https://github.com/akihidem/KOKORO/issues/94)
+- [ ] npm publish（alpha — 2FA OTP 認証待ち: `npm publish --tag alpha`）
 - [ ] フル版 → 要約版の半自動生成（§13.4）
 - [ ] ベンダメモリとの矛盾検知（§12.4）
-- [ ] npm publish（alpha）
-- [ ] KOKORO SPEC への upstream 提案（[docs/ISSUE-DRAFT.md](./docs/ISSUE-DRAFT.md)）
 
 ## License
 

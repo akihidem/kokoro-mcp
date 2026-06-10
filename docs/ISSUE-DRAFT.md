@@ -1,7 +1,7 @@
 # [Issue 草案] akashi 信頼層: §3.1 signature_hash 必須化と §10.2 撤回執行の実装提案
 
-> **このファイルは akihidem/KOKORO リポジトリに起票する Issue の草案**（設計記録の外部化用）。
-> 起票はレビュー後に手動で行う。
+> **起票済み**: [akihidem/KOKORO#94](https://github.com/akihidem/KOKORO/issues/94)（2026-06-11）。
+> 以下は起票時点の本文（設計記録）。以後の議論は Issue 側を正とする。
 
 ## 提案の要旨
 
