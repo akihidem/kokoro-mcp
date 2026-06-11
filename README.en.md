@@ -35,7 +35,7 @@ kokoro-mcp  (verifies: signature, tampering, expiry, revocation, SPEC §10.3 dis
 ## Install
 
 ```bash
-npm install -g github:akihidem/kokoro-mcp   # or the release tarball / npm (alpha) once published
+npm install -g kokoro-mcp
 ```
 
 Zero runtime dependencies — Node 20+ standard library only.
