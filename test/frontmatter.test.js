@@ -24,3 +24,10 @@ test('frontmatter がない場合は meta: null', () => {
   assert.equal(meta, null);
   assert.equal(body, '# 見出しだけ\n');
 });
+
+test('UTF-8 BOM 付きでも frontmatter を読める', () => {
+  const { meta, body } = parseFrontmatter('﻿---\nversion: 1.0.0\nconsent_obtained: true\n---\n\n## 本文\n');
+  assert.equal(meta.version, '1.0.0');
+  assert.equal(meta.consent_obtained, true);
+  assert.equal(body, '\n## 本文\n');
+});

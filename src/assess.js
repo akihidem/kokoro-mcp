@@ -32,6 +32,12 @@ export async function assess({ file, registry, policy = 'clinical', allowUnsigne
     try {
       sidecar = JSON.parse(readFileSync(sidecarPath, 'utf8'));
     } catch {
+      sidecar = null;
+    }
+    // sidecar ファイルが在るのに中身が object でない（null・数値・配列・JSON 破損）場合は
+    // 「未署名」ではなく破損として扱う。null のままだと unsigned 扱いになり、
+    // --allow-unsigned で配信されてしまう。
+    if (sidecar === null || typeof sidecar !== 'object' || Array.isArray(sidecar)) {
       sidecar = { spec: 'broken-sidecar' };
     }
   }

@@ -43,26 +43,48 @@ export function startMcpServer(opts) {
     `kokoro-mcp serve: policy=${opts.policy ?? 'clinical'} file=${opts.file ?? '(auto)'} registry=${opts.registry ?? '(auto)'}\n`,
   );
   const rl = createInterface({ input: process.stdin, terminal: false });
-  rl.on('line', async (line) => {
-    if (!line.trim()) return;
-    let msg;
-    try {
-      msg = JSON.parse(line);
-    } catch {
-      return;
-    }
-    if (msg.id === undefined || msg.id === null) return; // notification
-    try {
-      const result = await handle(msg, opts, serverInfo);
-      process.stdout.write(JSON.stringify({ jsonrpc: '2.0', id: msg.id, result }) + '\n');
-    } catch (e) {
-      const code = e instanceof McpError ? e.code : -32603;
-      process.stdout.write(
-        JSON.stringify({ jsonrpc: '2.0', id: msg.id, error: { code, message: e.message } }) + '\n',
-      );
-    }
+  // 応答待ちの要求。stdin が閉じても、ここが空になるまでは終了しない。
+  // （`echo REQ | kokoro-mcp serve` のように要求直後に入力が閉じると、レジストリの fetch を
+  //   待っている間に process.exit して応答が失われていた）
+  const inflight = new Set();
+  rl.on('line', (line) => {
+    const p = onLine(line, opts, serverInfo);
+    inflight.add(p);
+    p.finally(() => inflight.delete(p));
   });
-  rl.on('close', () => process.exit(0));
+  rl.on('close', async () => {
+    await Promise.allSettled([...inflight]);
+    process.exit(0);
+  });
+}
+
+function send(obj) {
+  process.stdout.write(JSON.stringify({ jsonrpc: '2.0', ...obj }) + '\n');
+}
+
+async function onLine(line, opts, serverInfo) {
+  if (!line.trim()) return;
+  let msg;
+  try {
+    msg = JSON.parse(line);
+  } catch {
+    // JSON-RPC 2.0 §5.1: 解析不能な入力には id: null で Parse error を返す（黙って捨てるとクライアントが待ち続ける）
+    send({ id: null, error: { code: -32700, message: 'Parse error' } });
+    return;
+  }
+  if (msg === null || typeof msg !== 'object' || Array.isArray(msg)) {
+    // バッチ（配列）は MCP 2025-06-18 で廃止されたので受け付けない
+    send({ id: null, error: { code: -32600, message: 'Invalid Request' } });
+    return;
+  }
+  if (msg.id === undefined || msg.id === null) return; // notification
+  try {
+    const result = await handle(msg, opts, serverInfo);
+    send({ id: msg.id, result });
+  } catch (e) {
+    const code = e instanceof McpError ? e.code : -32603;
+    send({ id: msg.id, error: { code, message: e.message } });
+  }
 }
 
 async function handle(msg, opts, serverInfo) {

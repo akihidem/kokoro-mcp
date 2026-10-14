@@ -88,7 +88,15 @@ export function verifyDocument(text, sidecar, { registry = null, registryError =
     ok = false;
   }
   if (!ok) return res('invalid-signature', false, { reason: 'ed25519 署名が一致しません' });
-  if (sidecar.expires_at && new Date(sidecar.expires_at) < now) return res('expired', false);
+  if (sidecar.expires_at) {
+    const exp = new Date(sidecar.expires_at);
+    // 日時として読めない expires_at は「期限なし」ではなく検証失敗として扱う（fail-closed）。
+    // Invalid Date との比較は常に false になり、期限切れが素通りしていた。
+    if (Number.isNaN(exp.getTime())) {
+      return res('invalid-signature', false, { reason: `expires_at が日時として読めません: ${sidecar.expires_at}` });
+    }
+    if (exp < now) return res('expired', false);
+  }
   if (registryError) warnings.push(`レジストリに到達できません: ${registryError}（署名自体は暗号学的に有効）`);
   if (registry) {
     const k = registry.keys?.[sidecar.key_id];

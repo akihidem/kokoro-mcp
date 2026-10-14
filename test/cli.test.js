@@ -130,3 +130,32 @@ test('存在しない明示パスは exit 3', () => {
   const r = run(['verify', '/nonexistent/kokoro.md']);
   assert.equal(r.code, 3);
 });
+
+test('sidecar の中身が null なら unsigned ではなく破損として拒否（--allow-unsigned でも不可）', () => {
+  const dir = tmp();
+  const file = join(dir, 'kokoro.md');
+  writeFileSync(file, FIXTURE);
+  writeFileSync(file + '.akashi.json', 'null\n');
+  const j = JSON.parse(run(['verify', file, '--json', '--allow-unsigned']).out);
+  assert.equal(j.servable, false);
+  assert.equal(j.verification.status, 'invalid-signature');
+  const r = run(['render', file, '--allow-unsigned']);
+  assert.equal(r.code, 2);
+  assert.equal(r.out, '');
+});
+
+test('sign --expires-days に数でない値・0 以下を渡すと分かる理由で止まる', () => {
+  const keyDir = tmp();
+  run(['keygen', '--out-dir', keyDir]);
+  const priv = join(keyDir, readdirSync(keyDir).find((f) => f.endsWith('.private.pem')));
+  const dir = tmp();
+  const file = join(dir, 'kokoro.md');
+  writeFileSync(file, FIXTURE);
+  for (const v of ['abc', '0', '-3']) {
+    const s = run(['sign', file, '--key', priv, '--expires-days', v]);
+    assert.equal(s.code, 1);
+    assert.ok(s.err.includes('--expires-days'), s.err);
+    assert.ok(!existsSync(file + '.akashi.json'));
+  }
+  assert.equal(run(['sign', file, '--key', priv, '--expires-days', '30']).code, 0);
+});

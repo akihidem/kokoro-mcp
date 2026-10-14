@@ -2,6 +2,10 @@
 // YAML 全文法ではなく必要十分なサブセットを依存ゼロで実装する。
 
 export function parseFrontmatter(text) {
+  // Windows のエディタが付ける UTF-8 BOM があると先頭の --- を見落とし、
+  // 「frontmatter なし」として clinical で常に拒否されていた。解析時だけ外す
+  // （署名対象の正規形 canonicalize は変えない: 既存 sidecar との互換のため）。
+  if (text.charCodeAt(0) === 0xfeff) text = text.slice(1);
   const m = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(text);
   if (!m) return { meta: null, body: text, raw: null };
   const meta = {};
