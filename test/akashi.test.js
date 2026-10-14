@@ -64,3 +64,11 @@ test('key_id は public key から決定的に導出される', () => {
   assert.equal(keyId(k.publicPem), k.keyId);
   assert.equal(k.keyId.length, 16);
 });
+
+test('日時として読めない expires_at は期限なし扱いせず invalid-signature', () => {
+  const s = { ...sidecar, expires_at: 'someday' };
+  const r = verifyDocument(FIXTURE, s);
+  assert.equal(r.status, 'invalid-signature');
+  assert.equal(r.ok, false);
+  assert.ok(r.reason.includes('expires_at'));
+});

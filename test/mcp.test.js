@@ -115,3 +115,52 @@ test('MCP: 未署名ファイルは isError で拒否、status は常に応答',
   const res = await rpc('resources/read', { uri: 'kokoro://context' });
   assert.equal(res.error.code, -32002);
 });
+
+test('MCP: 要求の直後に stdin が閉じても、レジストリ取得を待って応答してから終了する', async (t) => {
+  const { createServer } = await import('node:http');
+  // 応答を遅らせるレジストリ。修正前はこの待ちの間に process.exit して応答が失われた
+  const srv = createServer((req, res) => {
+    setTimeout(() => {
+      res.setHeader('content-type', 'application/json');
+      res.end(JSON.stringify({ spec: 'akashi-registry/0.1', keys: {}, documents: {} }));
+    }, 300);
+  });
+  await new Promise((r) => srv.listen(0, '127.0.0.1', r));
+  t.after(() => srv.close());
+  const dir = tmp();
+  const { file } = makeSigned(dir);
+  const url = `http://127.0.0.1:${srv.address().port}/registry.json`;
+  const child = spawn(process.execPath, [BIN, 'serve', '--file', file, '--registry', url], {
+    stdio: ['pipe', 'pipe', 'pipe'],
+  });
+  t.after(() => child.kill());
+  let out = '';
+  child.stdout.on('data', (d) => (out += d));
+  child.stdin.end(
+    JSON.stringify({ jsonrpc: '2.0', id: 7, method: 'tools/call', params: { name: 'check_kokoro_status', arguments: {} } }) + '\n',
+  );
+  const code = await new Promise((r) => child.on('exit', r));
+  assert.equal(code, 0);
+  const msg = JSON.parse(out.trim().split('\n').pop());
+  assert.equal(msg.id, 7);
+  assert.equal(JSON.parse(msg.result.content[0].text).verification.status, 'verified');
+});
+
+test('MCP: 解析できない行には Parse error（-32700）、配列には Invalid Request を返す', async (t) => {
+  const dir = tmp();
+  const { file } = makeSigned(dir);
+  const child = spawn(process.execPath, [BIN, 'serve', '--file', file], { stdio: ['pipe', 'pipe', 'pipe'] });
+  t.after(() => child.kill());
+  let out = '';
+  child.stdout.on('data', (d) => (out += d));
+  child.stdin.end('{not json\n[]\n');
+  await new Promise((r) => child.on('exit', r));
+  const msgs = out.trim().split('\n').map((l) => JSON.parse(l));
+  assert.deepEqual(
+    msgs.map((m) => [m.id, m.error.code]),
+    [
+      [null, -32700],
+      [null, -32600],
+    ],
+  );
+});

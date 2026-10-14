@@ -137,10 +137,17 @@ function cmdSign(argv) {
   }
   for (const w of lint.warnings) console.error(`  ⚠ ${w}`);
 
+  let expiresAt = null;
+  if (values['expires-days'] !== undefined) {
+    // 数でない値は new Date(NaN).toISOString() の RangeError（Invalid time value）になり、
+    // 原因が分からなかった。0 以下は署名した瞬間に期限切れになるので受け付けない。
+    const days = Number(values['expires-days']);
+    if (!Number.isFinite(days) || days <= 0) {
+      throw new Error(`--expires-days は正の数で指定してください（指定値: ${values['expires-days']}）`);
+    }
+    expiresAt = new Date(Date.now() + days * 86400_000).toISOString();
+  }
   const privatePem = readFileSync(values.key, 'utf8');
-  const expiresAt = values['expires-days']
-    ? new Date(Date.now() + Number(values['expires-days']) * 86400_000).toISOString()
-    : null;
   const sidecar = signDocument(doc.text, privatePem, {
     target: basename(path),
     alias: values.alias ?? doc.meta?.reviewed_by ?? doc.meta?.psychologist ?? null,
